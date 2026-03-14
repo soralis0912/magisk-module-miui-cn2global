@@ -15,6 +15,8 @@ jobs:
       contents: write
     env:
       RELEASE_TAG: ${{ inputs.tag }}
+      ARCHIVE_NAME: magisk-module-hyperos-cn2global-${{ inputs.tag }}.zip
+      ARCHIVE_NAME_NO_LANGUAGES: magisk-module-hyperos-cn2global-no-languages-${{ inputs.tag }}.zip
     steps:
     - uses: actions/checkout@v4
       with:
@@ -61,12 +63,12 @@ jobs:
 
     - name: Archive Release
       run: |
-        zip -r magisk-module-hyperos-cn2global.zip . \
+        zip -r "${ARCHIVE_NAME}" . \
           -x '.git/*' '.github/*' 'overlay/*' '*.zip' '.editorconfig'
 
     - name: Archive Release without languages
       run: |
-        zip -r magisk-module-hyperos-cn2global-no-languages.zip . \
+        zip -r "${ARCHIVE_NAME_NO_LANGUAGES}" . \
           -x '.git/*' '.github/*' 'overlay/*' '*.zip' '.editorconfig' 'system/product/overlay/treble-overlay-*.apk'
 
     - name: Upload Release
@@ -74,6 +76,6 @@ jobs:
       with:
         tag: ${{ env.RELEASE_TAG }}
         name: ${{ env.RELEASE_TAG }}
-        artifacts: "magisk-module-hyperos-cn2global.zip,magisk-module-hyperos-cn2global-no-languages.zip"
+        artifacts: "${{ env.ARCHIVE_NAME }},${{ env.ARCHIVE_NAME_NO_LANGUAGES }}"
         skipIfReleaseExists: true
         token: ${{ secrets.GITHUB_TOKEN }}
