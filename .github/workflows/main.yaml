@@ -1,0 +1,79 @@
+name: Create Archive
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag name (example: v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Checkout xiaomi_hardware_overlay
+      uses: actions/checkout@v4
+      with:
+        repository: soralis0912/xiaomi_hardware_overlay
+        token: ${{ secrets.OVERLAY_REPO_TOKEN }}
+        path: overlay
+
+    - name: Build overlay
+      run: |
+        cd overlay
+        ./build/build.sh
+
+    - name: Copy overlay APKs to module
+      run: |
+        mkdir -p system/product/overlay
+        cp overlay/build/out/*.apk system/product/overlay/
+
+    - name: Validate tag
+      run: |
+        case "${RELEASE_TAG}" in
+          v*)
+            ;;
+          *)
+            echo "Tag must start with 'v': ${RELEASE_TAG}"
+            exit 1
+            ;;
+        esac
+
+    - name: Create and push tag
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+          echo "Tag ${RELEASE_TAG} already exists on origin"
+        else
+          git tag "${RELEASE_TAG}" "${GITHUB_SHA}"
+          git push origin "refs/tags/${RELEASE_TAG}"
+        fi
+
+    - name: Archive Release
+      run: |
+        zip -r magisk-module-hyperos-cn2global.zip . \
+          -x '.git/*' '.github/*' 'overlay/*' '*.zip' '.editorconfig'
+
+    - name: Archive Release without languages
+      run: |
+        zip -r magisk-module-hyperos-cn2global-no-languages.zip . \
+          -x '.git/*' '.github/*' 'overlay/*' '*.zip' '.editorconfig' 'system/product/overlay/treble-overlay-*.apk'
+
+    - name: Upload Release
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{ env.RELEASE_TAG }}
+        name: ${{ env.RELEASE_TAG }}
+        artifacts: "magisk-module-hyperos-cn2global.zip,magisk-module-hyperos-cn2global-no-languages.zip"
+        skipIfReleaseExists: true
+        token: ${{ secrets.GITHUB_TOKEN }}
