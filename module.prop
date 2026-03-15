@@ -1,7 +1,7 @@
-id=xiaomi-miui-conv
+id=xiaomi-hyper-conv-global
 name=Patch for Xiaomi HyperOS China
-version=v17
-versionCode=17
+version=v18
+versionCode=18
 author=AndroPlus
 description=Xiaomi HyperOS China to Global
 updateJson=https://raw.githubusercontent.com/AndroPlus-org/magisk-module-miui-cn2global/master/update.json
